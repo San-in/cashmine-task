@@ -17,6 +17,8 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack>
             <Stack.Screen name="index" options={{ title: 'Payback' }} />
+            <Stack.Screen name="claim" options={{ title: 'Claim' }} />
+            <Stack.Screen name="claims/[id]" options={{ title: 'Claim status' }} />
             <Stack.Screen name="token" options={{ title: 'API token' }} />
           </Stack>
         </ThemeProvider>
