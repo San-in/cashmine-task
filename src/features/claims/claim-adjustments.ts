@@ -7,6 +7,8 @@ export type TrackedClaim = {
   id: string;
   asset: string;
   amount: string;
+  /** For display only; null for entries saved before this field existed. */
+  receiveAmount: string | null;
   createdAt: string;
   status: ClaimStatus;
   failureReason: string | null;

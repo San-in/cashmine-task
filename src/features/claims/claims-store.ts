@@ -23,6 +23,7 @@ export function trackClaim(claim: Claim): void {
       id: claim.id,
       asset: claim.asset,
       amount: claim.amount,
+      receiveAmount: claim.receiveAmount,
       createdAt: claim.createdAt,
       status: claim.status,
       failureReason: claim.failureReason,

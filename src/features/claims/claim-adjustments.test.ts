@@ -16,6 +16,7 @@ const claim = (createdAt: string, status: TrackedClaim['status'] = 'pending'): T
   id: 'clm_1',
   asset: 'ETH',
   amount: '0.2',
+  receiveAmount: '0.1988',
   createdAt,
   status,
   failureReason: null,

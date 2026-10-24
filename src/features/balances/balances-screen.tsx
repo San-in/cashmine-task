@@ -190,8 +190,13 @@ function RecentClaims({ claims, onOpen }: { claims: TrackedClaim[]; onOpen: (id:
         <View key={claim.id} style={styles.row}>
           <View style={styles.freshnessText}>
             <ThemedText type="small">
-              {claim.amount} {claim.asset}
+              Claimed {claim.amount} {claim.asset}
             </ThemedText>
+            {claim.receiveAmount ? (
+              <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+                You receive {claim.receiveAmount} {claim.asset} after the fee
+              </ThemedText>
+            ) : null}
             <ThemedText
               type="small"
               themeColor={claim.status === 'failed' ? 'danger' : claim.status === 'completed' ? 'success' : 'warning'}
