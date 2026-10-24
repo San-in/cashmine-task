@@ -122,7 +122,7 @@ export function BalancesScreen() {
         </Banner>
       ) : null}
 
-      {tracked.length > 0 ? <RecentClaims claims={tracked} onOpen={(id) => router.push({ pathname: '/claims/[id]', params: { id } })} /> : null}
+      {tracked.length > 0 ? <RecentClaims claims={tracked} onOpen={(id) => router.push({ pathname: '/claim-status', params: { id } })} /> : null}
 
       {items.length === 0 ? (
         <EmptyState title="No payback yet" message="Payback from your exchange trades will show up here." />

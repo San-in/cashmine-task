@@ -18,7 +18,7 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="index" options={{ title: 'Payback' }} />
             <Stack.Screen name="claim" options={{ title: 'Claim' }} />
-            <Stack.Screen name="claims/[id]" options={{ title: 'Claim status' }} />
+            <Stack.Screen name="claim-status" options={{ title: 'Claim status' }} />
             <Stack.Screen name="token" options={{ title: 'API token' }} />
           </Stack>
         </ThemeProvider>

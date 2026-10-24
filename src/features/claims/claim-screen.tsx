@@ -330,7 +330,7 @@ function ClaimSubmission({ intent, onRejected }: { intent: ClaimIntent; onReject
     const outcome = await submitClaimIntent(token, setAttempt);
     if (outcome.kind === 'created') {
       void queryClient.invalidateQueries({ queryKey: balancesQueryKey });
-      router.replace({ pathname: '/claims/[id]', params: { id: outcome.claim.id } });
+      router.replace({ pathname: '/claim-status', params: { id: outcome.claim.id } });
     } else if (outcome.kind === 'rejected') {
       onRejected(outcome.error);
     } else {
