@@ -46,7 +46,8 @@ async function run(token: string, onAttempt?: (attempt: number) => void): Promis
 
   let lastError: unknown = null;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    onAttempt?.(attempt);
+    // Callers start at attempt 1, so only report retries (and never synchronously on start).
+    if (attempt > 1) onAttempt?.(attempt);
     try {
       // Same key and same body on every attempt.
       const { claim } = await createClaim(token, intent.key, intent.body);

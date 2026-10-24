@@ -1,7 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { resetClaimStores } from '@/features/claims/claims-store';
+import { useHydrated } from '@/hooks/use-hydrated';
 import { readItem, removeItem, writeItem } from '@/lib/storage';
 
 const TOKEN_KEY = 'cashmine.token';
@@ -20,12 +21,18 @@ const TokenContext = createContext<TokenContextValue | null>(null);
 
 export function TokenProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [state, setState] = useState<TokenState>({ status: 'loading' });
+  const hydrated = useHydrated();
+  // Set once the user saves or forgets a token in this session; until then we read storage.
+  const [saved, setSaved] = useState<{ token: string | null; persisted: boolean } | null>(null);
 
   // Read on the client only: there is no localStorage during static rendering.
-  useEffect(() => {
-    setState({ status: 'ready', token: readItem(TOKEN_KEY), persisted: true });
-  }, []);
+  const state = useMemo<TokenState>(
+    () =>
+      hydrated
+        ? { status: 'ready', ...(saved ?? { token: readItem(TOKEN_KEY), persisted: true }) }
+        : { status: 'loading' },
+    [hydrated, saved],
+  );
 
   const saveToken = useCallback(
     (token: string) => {
@@ -37,7 +44,7 @@ export function TokenProvider({ children }: { children: ReactNode }) {
         queryClient.clear();
         resetClaimStores();
       }
-      setState({ status: 'ready', token, persisted });
+      setSaved({ token, persisted });
     },
     [queryClient],
   );
@@ -46,7 +53,7 @@ export function TokenProvider({ children }: { children: ReactNode }) {
     removeItem(TOKEN_KEY);
     queryClient.clear();
     resetClaimStores();
-    setState({ status: 'ready', token: null, persisted: true });
+    setSaved({ token: null, persisted: true });
   }, [queryClient]);
 
   const value = useMemo(() => ({ state, saveToken, clearToken }), [state, saveToken, clearToken]);

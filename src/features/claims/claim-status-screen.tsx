@@ -35,7 +35,7 @@ export function ClaimStatusScreen({ id }: { id: string }) {
     const notFound = isApiError(query.error) && query.error.code === 'NOT_FOUND';
     return (
       <ErrorState
-        title={notFound ? 'Claim not found' : "Couldn't load the claim"}
+        title={notFound ? 'Claim not found' : "Couldn’t load the claim"}
         message={notFound ? 'This claim does not exist for your token.' : describeError(query.error)}
         actionTitle={notFound ? 'Back to balances' : 'Try again'}
         onAction={notFound ? goHome : () => void query.refetch()}
@@ -74,7 +74,7 @@ export function ClaimStatusScreen({ id }: { id: string }) {
 
       {query.isRefetchError ? (
         <Banner tone="warning">
-          <ThemedText type="small">Couldn't refresh the status: {describeError(query.error)} Still trying.</ThemedText>
+          <ThemedText type="small">Couldn’t refresh the status: {describeError(query.error)} Still trying.</ThemedText>
         </Banner>
       ) : null}
 

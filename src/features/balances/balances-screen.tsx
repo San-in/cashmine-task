@@ -74,7 +74,7 @@ export function BalancesScreen() {
       <Screen>
         {header}
         <ErrorState
-          title="Couldn't load balances"
+          title="Couldn’t load balances"
           message={describeError(query.error)}
           actionTitle={unauthorized ? 'Change token' : 'Try again'}
           onAction={() => (unauthorized ? router.push('/token') : void query.refetch())}
@@ -108,7 +108,7 @@ export function BalancesScreen() {
       {query.isRefetchError ? (
         <Banner tone="warning">
           <ThemedText type="small">
-            Couldn't refresh: {describeError(query.error)} Showing balances from {formatTime(asOf)}.
+            Couldn’t refresh: {describeError(query.error)} Showing balances from {formatTime(asOf)}.
           </ThemedText>
         </Banner>
       ) : null}

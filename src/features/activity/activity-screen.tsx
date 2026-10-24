@@ -43,7 +43,7 @@ export function ActivityScreen() {
     return (
       <Screen>
         <ErrorState
-          title="Couldn't load activity"
+          title="Couldn’t load activity"
           message={describeError(query.error)}
           actionTitle="Try again"
           onAction={() => void query.refetch()}
@@ -59,7 +59,7 @@ export function ActivityScreen() {
     <Screen refreshControl={<RefreshControl refreshing={pulling} onRefresh={refresh} />}>
       {query.isRefetchError ? (
         <Banner tone="warning">
-          <ThemedText type="small">Couldn't refresh: {describeError(query.error)}</ThemedText>
+          <ThemedText type="small">Couldn’t refresh: {describeError(query.error)}</ThemedText>
         </Banner>
       ) : null}
 
@@ -84,7 +84,7 @@ export function ActivityScreen() {
 
       {query.isFetchNextPageError ? (
         <Banner tone="danger">
-          <ThemedText type="small">Couldn't load more: {describeError(query.error)}</ThemedText>
+          <ThemedText type="small">Couldn’t load more: {describeError(query.error)}</ThemedText>
           <Button title="Try again" variant="secondary" onPress={() => void query.fetchNextPage()} />
         </Banner>
       ) : query.hasNextPage ? (
@@ -96,7 +96,7 @@ export function ActivityScreen() {
         />
       ) : items.length > 0 ? (
         <ThemedText type="small" themeColor="textSecondary" style={styles.end}>
-          That's everything.
+          That’s everything.
         </ThemedText>
       ) : null}
     </Screen>

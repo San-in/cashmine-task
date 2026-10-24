@@ -65,7 +65,7 @@ function ClaimForm({ draft, onChange, rejection, clearRejection }: ClaimFormProp
   if (!balances) {
     return (
       <ErrorState
-        title="Couldn't load balances"
+        title="Couldn’t load balances"
         message={describeError(query.error)}
         actionTitle="Try again"
         onAction={() => void query.refetch()}
@@ -166,7 +166,7 @@ function ClaimDetails({ balance, adjusted, draft, onChange, rejection }: ClaimDe
   if (!options) {
     return (
       <ErrorState
-        title="Couldn't load claim options"
+        title="Couldn’t load claim options"
         message={optionsQuery.isError ? describeError(optionsQuery.error) : 'The server sent claim options we could not read.'}
         actionTitle="Try again"
         onAction={() => void optionsQuery.refetch()}
@@ -325,8 +325,7 @@ function ClaimSubmission({ intent, onRejected }: { intent: ClaimIntent; onReject
   const [attempt, setAttempt] = useState(1);
   const [lastError, setLastError] = useState<unknown>(null);
 
-  const run = useCallback(async () => {
-    setPhase('submitting');
+  const submit = useCallback(async () => {
     const outcome = await submitClaimIntent(token, setAttempt);
     if (outcome.kind === 'created') {
       void queryClient.invalidateQueries({ queryKey: balancesQueryKey });
@@ -339,11 +338,19 @@ function ClaimSubmission({ intent, onRejected }: { intent: ClaimIntent; onReject
     }
   }, [token, queryClient, router, onRejected]);
 
-  // Runs on open, including after a reload with an unresolved claim.
+  // Runs on open, including after a reload with an unresolved claim. This starts a network
+  // request (an external system); every state update in submit happens after an await.
   useEffect(() => {
-    void run();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void submit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const checkAgain = () => {
+    setPhase('submitting');
+    setAttempt(1);
+    void submit();
+  };
 
   const what = `${intent.body.amount} ${intent.body.asset}`;
 
@@ -369,12 +376,11 @@ function ClaimSubmission({ intent, onRejected }: { intent: ClaimIntent; onReject
       <Banner tone="warning">
         <ThemedText type="smallBold">We could not confirm your claim of {what}</ThemedText>
         <ThemedText type="small">
-          The server did not answer ({describeError(lastError)}), so we do not know yet whether the claim went through.
-          Please do not start a new claim. Checking again sends the same request, which can never create a second
-          claim.
+          {describeError(lastError)} We do not know yet whether the claim went through. Please do not start a new
+          claim: checking again sends the same request, which can never create a second claim.
         </ThemedText>
       </Banner>
-      <Button title="Check again" onPress={() => void run()} />
+      <Button title="Check again" onPress={checkAgain} />
       <Button title="Back to balances" variant="secondary" onPress={() => router.replace('/')} />
     </>
   );
