@@ -23,11 +23,16 @@ export function BalancesScreen() {
   const router = useRouter();
   const query = useBalances();
   const [pulling, setPulling] = useState(false);
+  // Snapshot that a manual refresh fetched again unchanged: "Updated" keeps ticking then,
+  // so we confirm the check happened until the next snapshot arrives.
+  const [recheckedAsOf, setRecheckedAsOf] = useState<string | null>(null);
 
   const refresh = async () => {
+    const asOfBefore = query.data?.asOf;
     setPulling(true);
     try {
-      await query.refetch();
+      const result = await query.refetch();
+      setRecheckedAsOf(result.isSuccess && result.data.asOf === asOfBefore ? result.data.asOf : null);
     } finally {
       setPulling(false);
     }
@@ -87,7 +92,12 @@ export function BalancesScreen() {
         </ThemedText>
         <ThemedText style={styles.total}>{formatUsd(totals.totalUsd)}</ThemedText>
         <ThemedText type="small">Available to claim {formatUsd(totals.availableUsd)}</ThemedText>
-        <Freshness asOf={asOf} checkedAt={query.dataUpdatedAt} fetching={query.isFetching} onRefresh={refresh} />
+        <Freshness
+          asOf={asOf}
+          checkedAt={recheckedAsOf === asOf ? query.dataUpdatedAt : null}
+          fetching={query.isFetching}
+          onRefresh={refresh}
+        />
       </Card>
 
       {query.isRefetchError ? (
@@ -110,8 +120,8 @@ export function BalancesScreen() {
 type FreshnessProps = {
   /** When the server computed the snapshot: the real age of the numbers. */
   asOf: string;
-  /** When we last fetched successfully. A refresh within the same 15s snapshot keeps asOf unchanged. */
-  checkedAt: number;
+  /** When we last fetched successfully; null unless a manual refresh returned this same snapshot. */
+  checkedAt: number | null;
   fetching: boolean;
   onRefresh: () => void;
 };
@@ -126,9 +136,11 @@ function Freshness({ asOf, checkedAt, fetching, onRefresh }: FreshnessProps) {
         <ThemedText type="small" themeColor={stale ? 'warning' : 'textSecondary'}>
           Updated {formatAge(age)} · {formatTime(asOf)}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-          Checked {formatAge(now - checkedAt)}
-        </ThemedText>
+        {checkedAt !== null ? (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+            Checked {formatAge(now - checkedAt)} · no newer data yet
+          </ThemedText>
+        ) : null}
         {stale ? (
           <ThemedText type="small" themeColor="warning">
             Balances may be out of date.
