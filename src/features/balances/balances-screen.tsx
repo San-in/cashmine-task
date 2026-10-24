@@ -103,6 +103,7 @@ export function BalancesScreen() {
           onRefresh={refresh}
         />
       </Card>
+      <Button title="Activity history" variant="secondary" onPress={() => router.push('/activity')} />
 
       {query.isRefetchError ? (
         <Banner tone="warning">
