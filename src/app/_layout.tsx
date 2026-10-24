@@ -1,18 +1,26 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router/stack';
+import { useState } from 'react';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { TokenProvider } from '@/features/token/token-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { createQueryClient } from '@/lib/query-client';
 
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [queryClient] = useState(createQueryClient);
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TokenProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="index" options={{ title: 'Payback' }} />
+            <Stack.Screen name="token" options={{ title: 'API token' }} />
+          </Stack>
+        </ThemeProvider>
+      </TokenProvider>
+    </QueryClientProvider>
   );
 }
