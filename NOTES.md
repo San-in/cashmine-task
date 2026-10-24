@@ -88,8 +88,10 @@ Idempotency-Key per claim). Logs: `ai-logs/claude-code-session.md` (main build) 
 ## Not done / known issues
 
 - Tests cover pure logic only (amounts, totals, balance correction, polling schedule, activity merge).
-  The submit/retry flow and screens have no automated tests; the unknown-outcome path was reasoned about and
-  reviewed, not exercised against a forced 504.
+  The submit/retry flow and screens have no automated tests. The unknown-outcome path was tested manually:
+  DevTools offline → 5 attempts with backoff → "could not confirm" screen → back online → Check again →
+  exactly one claim in Activity. Not tested: a real 504, or a response lost after the server created the
+  claim (the idempotent replay case).
 - A 401 during retries is treated as "not created" and drops the key; if an earlier attempt did create the
   claim, it is still reflected by the next snapshot but not tracked or linked.
 - The fee is taken from `claim-options` at review time; if the server charged a different fee, only the status
