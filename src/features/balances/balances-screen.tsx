@@ -8,7 +8,9 @@ import { ThemedText } from '@/components/themed-text';
 import { Banner, Button, Card, EmptyState, ErrorState, LoadingState, Screen } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { assetTotal, balanceTotals } from '@/features/balances/totals';
-import { useBalances } from '@/features/balances/use-balances';
+import type { TrackedClaim } from '@/features/claims/claim-adjustments';
+import { claimIntentStore } from '@/features/claims/claims-store';
+import { useAdjustedBalances, useTrackedClaimsPolling } from '@/features/claims/use-claims';
 import { maskToken, useToken } from '@/features/token/token-context';
 import { useNow } from '@/hooks/use-now';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,7 +23,9 @@ const STALE_AFTER_MS = 60_000;
 export function BalancesScreen() {
   const token = useToken();
   const router = useRouter();
-  const query = useBalances();
+  const { query, balances, tracked } = useAdjustedBalances();
+  const intent = claimIntentStore.useValue();
+  useTrackedClaimsPolling();
   const [pulling, setPulling] = useState(false);
   // Snapshot that a manual refresh fetched again unchanged: "Updated" keeps ticking then,
   // so we confirm the check happened until the next snapshot arrives.
@@ -64,7 +68,7 @@ export function BalancesScreen() {
     );
   }
 
-  if (query.isError && !query.data) {
+  if (!balances) {
     const unauthorized = isApiError(query.error) && query.error.code === 'UNAUTHORIZED';
     return (
       <Screen>
@@ -80,7 +84,7 @@ export function BalancesScreen() {
     );
   }
 
-  const { asOf, items } = query.data;
+  const { asOf, items, adjustedAssets } = balances;
   const totals = balanceTotals(items);
 
   return (
@@ -108,10 +112,30 @@ export function BalancesScreen() {
         </Banner>
       ) : null}
 
+      {intent ? (
+        <Banner tone="warning">
+          <ThemedText type="small">
+            Your claim of {intent.body.amount} {intent.body.asset} is not confirmed yet. New claims are paused until we
+            know the result.
+          </ThemedText>
+          <Button title="Check claim" onPress={() => router.push('/claim')} />
+        </Banner>
+      ) : null}
+
+      {tracked.length > 0 ? <RecentClaims claims={tracked} onOpen={(id) => router.push({ pathname: '/claims/[id]', params: { id } })} /> : null}
+
       {items.length === 0 ? (
         <EmptyState title="No payback yet" message="Payback from your exchange trades will show up here." />
       ) : (
-        items.map((item) => <AssetCard key={item.asset} item={item} />)
+        items.map((item) => (
+          <AssetCard
+            key={item.asset}
+            item={item}
+            adjusted={adjustedAssets.includes(item.asset)}
+            claimBlocked={intent !== null}
+            onClaim={() => router.push({ pathname: '/claim', params: { asset: item.asset } })}
+          />
+        ))
       )}
     </Screen>
   );
@@ -152,7 +176,40 @@ function Freshness({ asOf, checkedAt, fetching, onRefresh }: FreshnessProps) {
   );
 }
 
-function AssetCard({ item }: { item: AssetBalance }) {
+const CLAIM_STATUS_TEXT: Record<TrackedClaim['status'], string> = {
+  pending: 'Processing…',
+  completed: 'Completed',
+  failed: 'Failed, amount returned to available',
+};
+
+function RecentClaims({ claims, onOpen }: { claims: TrackedClaim[]; onOpen: (id: string) => void }) {
+  return (
+    <Card>
+      <ThemedText type="smallBold">Recent claims</ThemedText>
+      {[...claims].reverse().map((claim) => (
+        <View key={claim.id} style={styles.row}>
+          <View style={styles.freshnessText}>
+            <ThemedText type="small">
+              {claim.amount} {claim.asset}
+            </ThemedText>
+            <ThemedText
+              type="small"
+              themeColor={claim.status === 'failed' ? 'danger' : claim.status === 'completed' ? 'success' : 'warning'}
+              style={styles.hint}>
+              {CLAIM_STATUS_TEXT[claim.status]}
+              {claim.status === 'failed' && claim.failureReason ? `: ${claim.failureReason}` : ''}
+            </ThemedText>
+          </View>
+          <Button title="Details" variant="secondary" onPress={() => onOpen(claim.id)} />
+        </View>
+      ))}
+    </Card>
+  );
+}
+
+type AssetCardProps = { item: AssetBalance; adjusted: boolean; claimBlocked: boolean; onClaim: () => void };
+
+function AssetCard({ item, adjusted, claimBlocked, onClaim }: AssetCardProps) {
   const theme = useTheme();
   const fmt = (units: bigint) => `${formatAmountForDisplay(units, item.decimals)} ${item.asset}`;
   return (
@@ -167,6 +224,12 @@ function AssetCard({ item }: { item: AssetBalance }) {
       {item.claiming > 0n ? (
         <BalanceRow label="Claiming" value={fmt(item.claiming)} hint="In claims that have not completed yet" />
       ) : null}
+      {adjusted ? (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
+          Includes your recent claim; the server snapshot will show it within 15 seconds.
+        </ThemedText>
+      ) : null}
+      <Button title={`Claim ${item.asset}`} onPress={onClaim} disabled={claimBlocked || item.available === 0n} />
     </Card>
   );
 }

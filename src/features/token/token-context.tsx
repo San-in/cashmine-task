@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { resetClaimStores } from '@/features/claims/claims-store';
 import { readItem, removeItem, writeItem } from '@/lib/storage';
 
 const TOKEN_KEY = 'cashmine.token';
@@ -28,9 +29,14 @@ export function TokenProvider({ children }: { children: ReactNode }) {
 
   const saveToken = useCallback(
     (token: string) => {
+      const changed = readItem(TOKEN_KEY) !== token;
       const persisted = writeItem(TOKEN_KEY, token);
-      // Data belongs to a token: never show one token's balances under another.
-      queryClient.clear();
+      // Data belongs to a token: never show one token's balances or claims under another.
+      // Re-saving the same token must not drop an unresolved claim.
+      if (changed) {
+        queryClient.clear();
+        resetClaimStores();
+      }
       setState({ status: 'ready', token, persisted });
     },
     [queryClient],
@@ -39,6 +45,7 @@ export function TokenProvider({ children }: { children: ReactNode }) {
   const clearToken = useCallback(() => {
     removeItem(TOKEN_KEY);
     queryClient.clear();
+    resetClaimStores();
     setState({ status: 'ready', token: null, persisted: true });
   }, [queryClient]);
 
